@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Twitch Interaction Plugin",
+	"Description": "Simple plugin to interact with twitch IRC and pubsub",
+	"Category": "Online Platform",
+	"CreatedBy": "zeplin455",
+	"CreatedByURL": "None",
+	"DocsURL": "None",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EnabledByDefault": true,
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "TwitchInteraction",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64"
+			]
+		}
+	]
+}
