@@ -37,7 +37,12 @@ public class TwitchInteraction : ModuleRules
                 "CoreUObject",
                 "Engine",
 				"Sockets",
-				"Networking"
+				"Networking",
+				"Json",
+				"JsonUtilities",
+				"WebSockets",
+                "HTTP",
+                "HttpServer"
 
                 // ... add other public dependencies that you statically link with here ...
 			}
@@ -60,6 +65,61 @@ public class TwitchInteraction : ModuleRules
 			{
             }
             );
+			
+			if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            bEnableExceptions = true;
+
+            PrivateIncludePaths.AddRange(
+                new string[] {
+                    "TwitchInteraction/Private",
+                    "TwitchInteraction/Private/Win64",
+                    "TwitchInteraction/Private/Win64/include",
+                    });
+
+            PublicIncludePaths.AddRange(
+                new string[] {
+                    Path.Combine(ModuleDirectory, "Private"),
+                    Path.Combine(ModuleDirectory, "Private/Win64"),
+                    Path.Combine(ModuleDirectory, "Private/Win64/include"),
+                });
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Mac)
+        {
+            bEnableExceptions = true;
+
+            PrivateIncludePaths.AddRange(
+                new string[] {
+                    "TwitchInteraction/Private",
+                    "TwitchInteraction/Private/Mac",
+                    "TwitchInteraction/Private/Mac/include",
+                    });
+
+            PublicIncludePaths.AddRange(
+                new string[] {
+                    Path.Combine(ModuleDirectory, "Private"),
+                    Path.Combine(ModuleDirectory, "Private/Mac"),
+                    Path.Combine(ModuleDirectory, "Private/Mac/include"),
+                });
+        }
+        else if (Target.Platform == UnrealTargetPlatform.Linux)
+        {
+            bEnableExceptions = true;
+
+            PrivateIncludePaths.AddRange(
+                new string[] {
+                    "TwitchInteraction/Private",
+                    "TwitchInteraction/Private/Linux",
+                    "TwitchInteraction/Private/Linux/include",
+                    });
+
+            PublicIncludePaths.AddRange(
+                new string[] {
+                    Path.Combine(ModuleDirectory, "Private"),
+                    Path.Combine(ModuleDirectory, "Private/Linux"),
+                    Path.Combine(ModuleDirectory, "Private/Linux/include"),
+                });
+        }
 
 	}
 }

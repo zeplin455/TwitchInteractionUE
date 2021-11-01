@@ -8,7 +8,6 @@
 #include "Components/ActorComponent.h"
 #include "Networking.h"
 #include "Engine/World.h"
-#include "Runtime/Engine/Public/TimerManager.h"
 #include "TwitchInteractionComponent.generated.h"
 
 
