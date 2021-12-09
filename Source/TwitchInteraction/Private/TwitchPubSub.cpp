@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "TwitchEventSub.h"
+#include "TwitchPubSub.h"
 #include "Serialization/JsonSerializer.h"
 #include "JsonObjectConverter.h"
 
 // Sets default values for this component's properties
-UTwitchEventSub::UTwitchEventSub()
+UTwitchPubSub::UTwitchPubSub()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -16,7 +16,7 @@ UTwitchEventSub::UTwitchEventSub()
 
 
 // Called when the game starts
-void UTwitchEventSub::BeginPlay()
+void UTwitchPubSub::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -24,21 +24,21 @@ void UTwitchEventSub::BeginPlay()
 	FModuleManager::Get().LoadModuleChecked("WebSockets");
 }
 
-void UTwitchEventSub::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UTwitchPubSub::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Disconnect();
 }
 
 
 // Called every frame
-void UTwitchEventSub::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UTwitchPubSub::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
 }
 
-void UTwitchEventSub::SetInfo(const FString _oauth, const FString _authType, const FString _channelId)
+void UTwitchPubSub::SetInfo(const FString _oauth, const FString _authType, const FString _channelId)
 {
 	authToken = _oauth;
 	authType = _authType;
@@ -46,7 +46,7 @@ void UTwitchEventSub::SetInfo(const FString _oauth, const FString _authType, con
 	Init = true;
 }
 
-bool UTwitchEventSub::Connect(FString& result)
+bool UTwitchPubSub::Connect(FString& result)
 {
 	const FString ServerURL = TEXT("wss://pubsub-edge.twitch.tv:443/"); // Your server URL. You can use ws, wss or wss+insecure.
 	const FString ServerProtocol = TEXT("wss");
@@ -60,7 +60,7 @@ bool UTwitchEventSub::Connect(FString& result)
 			SendMessage("{\"type\":\"PING\"}");
 			RequestEventSubs();
 
-			GetWorld()->GetTimerManager().SetTimer(UpdateTimer, this, &UTwitchEventSub::UpdatePing, 10.f, true);
+			GetWorld()->GetTimerManager().SetTimer(UpdateTimer, this, &UTwitchPubSub::UpdatePing, 10.f, true);
 		});
 
 	Socket->OnConnectionError().AddLambda([](const FString& Error) -> void {
@@ -99,7 +99,7 @@ bool UTwitchEventSub::Connect(FString& result)
 	return true;
 }
 
-bool UTwitchEventSub::Disconnect()
+bool UTwitchPubSub::Disconnect()
 {
 	if (Socket != nullptr && Socket->IsConnected())
 	{
@@ -109,7 +109,7 @@ bool UTwitchEventSub::Disconnect()
 	return true;
 }
 
-bool UTwitchEventSub::SendMessage(FString _message)
+bool UTwitchPubSub::SendMessage(FString _message)
 {
 	if (Socket != nullptr && Socket->IsConnected())
 	{
@@ -123,7 +123,7 @@ bool UTwitchEventSub::SendMessage(FString _message)
 	}
 }
 
-void UTwitchEventSub::UpdatePing()
+void UTwitchPubSub::UpdatePing()
 {
 	if (Socket == nullptr && Socket->IsConnected())
 	{
@@ -141,7 +141,7 @@ void UTwitchEventSub::UpdatePing()
 	}
 }
 
-void UTwitchEventSub::RequestEventSubs()
+void UTwitchPubSub::RequestEventSubs()
 {
 	FTwitchEventSubRequest requestInfo;
 	requestInfo.type = "LISTEN";
@@ -162,15 +162,21 @@ void UTwitchEventSub::RequestEventSubs()
 
 }
 
-void UTwitchEventSub::ProcessMessage(const FString _jsonStr)
+void UTwitchPubSub::ProcessMessage(const FString _jsonStr)
 {
 	FTwitchMessage targetMessage;
+	
+	//Fix twitch broken json strings
+	FString fixedStr = _jsonStr.Replace(TEXT("\"{"), TEXT("{"));
+	fixedStr = fixedStr.Replace(TEXT("}\""), TEXT("}"));
 
 	UE_LOG(LogTemp, Warning, TEXT("RECV - %s"),*_jsonStr);
+	UE_LOG(LogTemp, Warning, TEXT("RECVF - %s"), *fixedStr);
 
-	if (!FJsonObjectConverter::JsonObjectStringToUStruct(_jsonStr, &targetMessage, 0, 0))
+	if (!FJsonObjectConverter::JsonObjectStringToUStruct(fixedStr, &targetMessage, 0, 0))
 	{
 		//ERROR
+		UE_LOG(LogTemp, Warning, TEXT("Deserialize Error : %s"), *fixedStr);
 	}
 
 	if (targetMessage.type == "PONG")
@@ -187,31 +193,32 @@ void UTwitchEventSub::ProcessMessage(const FString _jsonStr)
 	{
 		if (targetMessage.data.topic.StartsWith("channel-bits-events-v2"))
 		{
-			FTwitchEventBits twitchEventBitsMessage;
-			FJsonObjectConverter::JsonObjectStringToUStruct(targetMessage.data.message, &twitchEventBitsMessage, 0, 0);
-			OnBitsEventReceived.Broadcast(twitchEventBitsMessage);
+			FTwitchEventBitsRoot twitchEventBitsMessage;
+			FJsonObjectConverter::JsonObjectStringToUStruct(fixedStr, &twitchEventBitsMessage, 0, 0);
+			OnBitsEventReceived.Broadcast(twitchEventBitsMessage.data.message.data);
 		}
 
 		if (targetMessage.data.topic.StartsWith("channel-bits-badge-unlocks"))
 		{
-			FTwitchEventBitsBadge twitchEventBitsBadgeMessage;
-			FJsonObjectConverter::JsonObjectStringToUStruct(targetMessage.data.message, &twitchEventBitsBadgeMessage, 0, 0);
-			OnBitsBadgeEventReceived.Broadcast(twitchEventBitsBadgeMessage);
+			FString fixBadgeJson = fixedStr.Replace(TEXT("\\\""), TEXT("\""));
+			FTwitchEventBitsBadgeRoot twitchEventBitsBadgeMessage;
+			FJsonObjectConverter::JsonObjectStringToUStruct(fixedStr, &twitchEventBitsBadgeMessage, 0, 0);
+			OnBitsBadgeEventReceived.Broadcast(twitchEventBitsBadgeMessage.data.message);
 		}
 
 		if (targetMessage.data.topic.StartsWith("channel-subscribe-events-v1"))
 		{
 			FTwitchEventSubscribe twitchSubscribeMessage;
-			FJsonObjectConverter::JsonObjectStringToUStruct(_jsonStr, &twitchSubscribeMessage, 0, 0);
+			FJsonObjectConverter::JsonObjectStringToUStruct(fixedStr, &twitchSubscribeMessage, 0, 0);
 			OnSubscribeEventReceived.Broadcast(twitchSubscribeMessage.data.message);
 		}
 	}
 
 	if (targetMessage.type == "reward-redeemed")
 	{
-		FTwitchEventRedeem twitchRedeemMessage;
-		FJsonObjectConverter::JsonObjectStringToUStruct(_jsonStr, &twitchRedeemMessage, 0, 0);
-		OnRedeemEventReceived.Broadcast(twitchRedeemMessage);
+		FTwitchEventRedeemRoot twitchRedeemMessage;
+		FJsonObjectConverter::JsonObjectStringToUStruct(fixedStr, &twitchRedeemMessage, 0, 0);
+		OnRedeemEventReceived.Broadcast(twitchRedeemMessage.data.data);
 	}
 }
 

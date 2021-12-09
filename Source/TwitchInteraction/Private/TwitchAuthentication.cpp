@@ -1,18 +1,18 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "TwitchAuthenticationComponent.h"
+#include "TwitchAuthentication.h"
 #include "Serialization/JsonSerializer.h"
 #include "JsonObjectConverter.h"
 
 DEFINE_LOG_CATEGORY(HttpAuthLog);
 
-TArray<UTwitchInteractionComponent*> UTwitchAuthenticationComponent::GlobalTwitchChatComponents;
-TArray<UTwitchEventSub*> UTwitchAuthenticationComponent::GlobalEventSubComponents;
-FTokenReceived UTwitchAuthenticationComponent::GlobalTokenReceived;
+TArray<UTwitchChat*> UTwitchAuthentication::GlobalTwitchChatComponents;
+TArray<UTwitchPubSub*> UTwitchAuthentication::GlobalEventSubComponents;
+FTokenReceived UTwitchAuthentication::GlobalTokenReceived;
 
 // Sets default values for this component's properties
-UTwitchAuthenticationComponent::UTwitchAuthenticationComponent()
+UTwitchAuthentication::UTwitchAuthentication()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -23,14 +23,14 @@ UTwitchAuthenticationComponent::UTwitchAuthenticationComponent()
 
 
 // Called when the game starts
-void UTwitchAuthenticationComponent::BeginPlay()
+void UTwitchAuthentication::BeginPlay()
 {
 	Super::BeginPlay();
 
 	
 }
 
-void UTwitchAuthenticationComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UTwitchAuthentication::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	auto HttpServerModule = &FHttpServerModule::Get();
 	HttpServerModule->StopAllListeners();
@@ -38,19 +38,19 @@ void UTwitchAuthenticationComponent::EndPlay(const EEndPlayReason::Type EndPlayR
 
 
 // Called every frame
-void UTwitchAuthenticationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UTwitchAuthentication::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
 }
 
-bool UTwitchAuthenticationComponent::FetchUserInfo(FString _username, FString _twitchToken)
+bool UTwitchAuthentication::FetchUserInfo(FString _username, FString _twitchToken)
 {
 	FHttpModule* Http = &FHttpModule::Get();
 
 	FHttpRequestRef Request = Http->CreateRequest();
-	Request->OnProcessRequestComplete().BindUObject(this, &UTwitchAuthenticationComponent::ProcessGetUserInfo);
+	Request->OnProcessRequestComplete().BindUObject(this, &UTwitchAuthentication::ProcessGetUserInfo);
 	//This is the url on which to process the request
 	Request->SetURL("https://api.twitch.tv/helix/users?login=" + _username);
 	Request->SetVerb("GET");
@@ -62,12 +62,12 @@ bool UTwitchAuthenticationComponent::FetchUserInfo(FString _username, FString _t
 	return true;
 }
 
-void UTwitchAuthenticationComponent::CheckTokenValid()
+void UTwitchAuthentication::CheckTokenValid()
 {
 	FHttpModule* Http = &FHttpModule::Get();
 
 	FHttpRequestRef Request = Http->CreateRequest();
-	Request->OnProcessRequestComplete().BindUObject(this, &UTwitchAuthenticationComponent::ProcessGetUserInfo);
+	Request->OnProcessRequestComplete().BindUObject(this, &UTwitchAuthentication::ProcessGetUserInfo);
 	//This is the url on which to process the request
 	Request->SetURL("https://api.twitch.tv/helix/users?login=" + username);
 	Request->SetVerb("GET");
@@ -77,16 +77,16 @@ void UTwitchAuthenticationComponent::CheckTokenValid()
 	Request->ProcessRequest();
 }
 
-void UTwitchAuthenticationComponent::Init()
+void UTwitchAuthentication::Init()
 {
 	if (TwitchChatComponent != nullptr)
 	{
-		UTwitchAuthenticationComponent::GlobalTwitchChatComponents.Add(TwitchChatComponent);
+		UTwitchAuthentication::GlobalTwitchChatComponents.Add(TwitchChatComponent);
 	}
 
 	if (EventSubComponent != nullptr)
 	{
-		UTwitchAuthenticationComponent::GlobalEventSubComponents.Add(EventSubComponent);
+		UTwitchAuthentication::GlobalEventSubComponents.Add(EventSubComponent);
 	}
 
 	GlobalTokenReceived = OnTokenReceived;
@@ -97,18 +97,17 @@ void UTwitchAuthenticationComponent::Init()
 
 	TSharedPtr<IHttpRouter> HttpRouter = HttpServerModule->GetHttpRouter(listenPort);
 	BindRouters(HttpRouter);
-
 	HttpServerModule->StartAllListeners();
-	FString Url = FString("https://id.twitch.tv/oauth2/authorize?client_id=") + clientId + FString("&redirect_uri=") + redirectUrl + FString("&response_type=token&scope=chat:read chat:edit bits:read channel:read:redemptions channel:read:subscriptions");
+	FString Url = FString("https://id.twitch.tv/oauth2/authorize?client_id=") + clientId + FString("&redirect_uri=") + redirectUrl + FString("&response_type=token&scope=") + FString::Join(scopes, TEXT(" "));
 	FPlatformProcess::LaunchURL(*Url, NULL, NULL);
 }
 
-void UTwitchAuthenticationComponent::BindRouters(const TSharedPtr<IHttpRouter>& HttpRouter)
+void UTwitchAuthentication::BindRouters(const TSharedPtr<IHttpRouter>& HttpRouter)
 {
 	FWebUtil::BindRoute(HttpRouter, TEXT("/Auth"), EHttpServerRequestVerbs::VERB_GET, FBaseHandler::AuthToken);
 }
 
-void UTwitchAuthenticationComponent::ProcessGetUserInfo(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+void UTwitchAuthentication::ProcessGetUserInfo(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
 	if (bWasSuccessful)
 	{
@@ -123,7 +122,7 @@ void UTwitchAuthenticationComponent::ProcessGetUserInfo(FHttpRequestPtr Request,
 	}
 }
 
-void UTwitchAuthenticationComponent::ProcessTokenValidateInfo(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
+void UTwitchAuthentication::ProcessTokenValidateInfo(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
 	if (bWasSuccessful)
 	{
@@ -153,23 +152,23 @@ TUniquePtr<FHttpServerResponse> FBaseHandler::AuthToken(const FHttpServerRequest
 		FString token = *Request.QueryParams.Find("access_token");
 		UE_LOG(HttpAuthLog, Log, TEXT("Auth Token %s"), *token);
 
-		if (UTwitchAuthenticationComponent::GlobalEventSubComponents.Num() > 0)
+		if (UTwitchAuthentication::GlobalEventSubComponents.Num() > 0)
 		{
-			for (int i = 0; i < UTwitchAuthenticationComponent::GlobalEventSubComponents.Num(); ++i)
+			for (int i = 0; i < UTwitchAuthentication::GlobalEventSubComponents.Num(); ++i)
 			{
-				UTwitchAuthenticationComponent::GlobalEventSubComponents[i]->authToken = token;
+				UTwitchAuthentication::GlobalEventSubComponents[i]->authToken = token;
 			}
 		}
 
-		if (UTwitchAuthenticationComponent::GlobalTwitchChatComponents.Num() > 0)
+		if (UTwitchAuthentication::GlobalTwitchChatComponents.Num() > 0)
 		{
-			for (int i = 0; i < UTwitchAuthenticationComponent::GlobalTwitchChatComponents.Num(); ++i)
+			for (int i = 0; i < UTwitchAuthentication::GlobalTwitchChatComponents.Num(); ++i)
 			{
-				UTwitchAuthenticationComponent::GlobalTwitchChatComponents[i]->OAuthToken = token;
+				UTwitchAuthentication::GlobalTwitchChatComponents[i]->OAuthToken = token;
 			}
 		}
 
-		UTwitchAuthenticationComponent::GlobalTokenReceived.Broadcast(token);
+		UTwitchAuthentication::GlobalTokenReceived.Broadcast(token);
 
 		return FWebUtil::OkResponse(true, 0);
 	}

@@ -9,7 +9,7 @@
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "WebSocketsModule.h"
 #include "IWebSocket.h"  
-#include "TwitchEventSub.generated.h"
+#include "TwitchPubSub.generated.h"
 
 USTRUCT(BlueprintType)
 struct FTwitchEventSubscribeDataMessageEmotes
@@ -220,7 +220,7 @@ public:
 };
 
 USTRUCT(BlueprintType)
-struct FTwitchEventRedeem
+struct FTwitchEventRedeemMessage
 {
 	GENERATED_USTRUCT_BODY()
 public:
@@ -228,6 +228,28 @@ public:
 		FString type;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
 		FTwitchEventRedeemData data;
+};
+
+USTRUCT(BlueprintType)
+struct FTwitchEventRedeemRoot
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FString type;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FTwitchEventRedeemMessage data;
+};
+
+USTRUCT(BlueprintType)
+struct FTwitchEventRedeemDataRoot
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FString topic;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FTwitchEventRedeemData message;
 };
 
 USTRUCT(BlueprintType)
@@ -251,6 +273,27 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
 		FString time;
+};
+USTRUCT(BlueprintType)
+struct FTwitchEventBitsBadgeMessage
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FString topic;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FTwitchEventBitsBadge message;
+};
+
+USTRUCT(BlueprintType)
+struct FTwitchEventBitsBadgeRoot
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FString type;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FTwitchEventBitsBadgeMessage data;
 };
 
 USTRUCT(BlueprintType)
@@ -306,11 +349,32 @@ public:
 		FTwitchEventBitsData data;
 };
 
+USTRUCT(BlueprintType)
+struct FTwitchEventBitsMessage
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	UPROPERTY()
+		FString topic;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TwitchInteraction")
+		FTwitchEventBits message;
+};
+
+USTRUCT()
+struct FTwitchEventBitsRoot
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	UPROPERTY()
+		FString type;
+	UPROPERTY()
+		FTwitchEventBitsMessage data;
+};
 
 USTRUCT()
 struct FTwitchEventSubRequestData
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 public:
 	UPROPERTY()
 		TArray<FString> topics;
@@ -321,7 +385,7 @@ public:
 USTRUCT()
 struct FTwitchEventSubRequest
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 public:
 	UPROPERTY()
 		FString type;
@@ -334,7 +398,7 @@ public:
 USTRUCT()
 struct FTwitchMessageData
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 public:
 	UPROPERTY()
 		FString topic;
@@ -345,7 +409,7 @@ public:
 USTRUCT()
 struct FTwitchMessage
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 public:
 	UPROPERTY()
 		FString type;
@@ -357,19 +421,19 @@ public:
 		FTwitchMessageData data;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBitsEventReceived, const FTwitchEventBits&, bitsEventInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBitsEventReceived, const FTwitchEventBitsData&, bitsEventInfo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBitsBadgeEventReceived, const FTwitchEventBitsBadge&, bitsBadgeEventInfo);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRedeemEventReceived, const FTwitchEventRedeem&, redeemEventInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRedeemEventReceived, const FTwitchEventRedeemData&, redeemEventInfo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSubscribeEventReceived, const FTwitchEventSubscribeMessage&, subscribeEventInfo);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class TWITCHINTERACTION_API UTwitchEventSub : public UActorComponent
+class TWITCHINTERACTION_API UTwitchPubSub : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UTwitchEventSub();
+	UTwitchPubSub();
 	bool Init;
 
 	UPROPERTY()

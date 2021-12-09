@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "TwitchInteractionComponent.h"
+#include "TwitchChat.h"
 #include <string>
 
-UTwitchInteractionComponent::UTwitchInteractionComponent()
+UTwitchChat::UTwitchChat()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	if (Socket != nullptr)
@@ -14,18 +14,18 @@ UTwitchInteractionComponent::UTwitchInteractionComponent()
 	}
 }
 
-void UTwitchInteractionComponent::BeginPlay()
+void UTwitchChat::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
 
-void UTwitchInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UTwitchChat::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UTwitchInteractionComponent::SetUserInfo(const FString _oauth, const FString _authType, const  FString _username, const FString _channel)
+void UTwitchChat::SetUserInfo(const FString _oauth, const FString _authType, const  FString _username, const FString _channel)
 {
 	OAuthToken = _oauth;
 	OAuthTokenType = _authType;
@@ -34,7 +34,7 @@ void UTwitchInteractionComponent::SetUserInfo(const FString _oauth, const FStrin
 	Init = true;
 }
 
-bool UTwitchInteractionComponent::SendMessage(FString _message, bool _sendTo, FString _channel)
+bool UTwitchChat::SendMessage(FString _message, bool _sendTo, FString _channel)
 {
 	if (Socket != nullptr && Socket->GetConnectionState() == ESocketConnectionState::SCS_Connected)
 	{
@@ -54,7 +54,7 @@ bool UTwitchInteractionComponent::SendMessage(FString _message, bool _sendTo, FS
 	}
 }
 
-bool UTwitchInteractionComponent::Connect(FString& _result)
+bool UTwitchChat::Connect(FString& _result)
 {
 	ISocketSubsystem* sss = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 	TSharedRef<FInternetAddr> connection_addr = sss->CreateInternetAddr();
@@ -93,14 +93,14 @@ bool UTwitchInteractionComponent::Connect(FString& _result)
 	}
 	else
 	{
-		GetWorld()->GetTimerManager().SetTimer(UpdateTimer, this, &UTwitchInteractionComponent::ReceiveData, 0.1f, true);
+		GetWorld()->GetTimerManager().SetTimer(UpdateTimer, this, &UTwitchChat::ReceiveData, 0.1f, true);
 		Socket = ret_socket;
 		return true;
 	}
 }
 
 
-void UTwitchInteractionComponent::ReceiveData()
+void UTwitchChat::ReceiveData()
 {
 	if (Socket == nullptr)
 	{
@@ -204,7 +204,7 @@ void UTwitchInteractionComponent::ReceiveData()
 	}
 }
 
-TArray<FString> UTwitchInteractionComponent::ProcessMessage(const FString _message, TArray<FString>& outSenderUsername, bool _filterUserOnly)
+TArray<FString> UTwitchChat::ProcessMessage(const FString _message, TArray<FString>& outSenderUsername, bool _filterUserOnly)
 {
 	TArray<FString> ret_messages_content;
 
@@ -252,15 +252,12 @@ TArray<FString> UTwitchInteractionComponent::ProcessMessage(const FString _messa
 			}
 			ret_messages_content.Add(message_content);
 			outSenderUsername.Add(sender_username);
-
-
-
 		}
 	}
 	return ret_messages_content;
 }
 
-bool UTwitchInteractionComponent::AuthenticateTwitchChat(FString& _result)
+bool UTwitchChat::AuthenticateTwitchChat(FString& _result)
 {
 	if (Socket == nullptr)
 	{
@@ -298,7 +295,7 @@ bool UTwitchInteractionComponent::AuthenticateTwitchChat(FString& _result)
 	return (b_success);
 }
 
-bool UTwitchInteractionComponent::RegisterCommand(const FString _command_name, const FOnCommandReceived& _callback_function, FString& _out_result)
+bool UTwitchChat::RegisterCommand(const FString _command_name, const FOnCommandReceived& _callback_function, FString& _out_result)
 {
 	if (_command_name == "")
 	{
@@ -322,7 +319,7 @@ bool UTwitchInteractionComponent::RegisterCommand(const FString _command_name, c
 	}
 }
 
-bool UTwitchInteractionComponent::UnregisterCommand(const FString _command_name, FString& _out_result)
+bool UTwitchChat::UnregisterCommand(const FString _command_name, FString& _out_result)
 {
 	if (_command_name == "")
 	{
@@ -342,7 +339,7 @@ bool UTwitchInteractionComponent::UnregisterCommand(const FString _command_name,
 	}
 }
 
-FString UTwitchInteractionComponent::GetCommandString(const FString& _message, TArray<FString>& outOptions)
+FString UTwitchChat::GetCommandString(const FString& _message, TArray<FString>& outOptions)
 {
 	FString ret_delimited_string = "";
 	if (_message == "")
@@ -365,13 +362,13 @@ FString UTwitchInteractionComponent::GetCommandString(const FString& _message, T
 	return command;
 }
 
-void UTwitchInteractionComponent::SetupCommandCharacters(const FString _commandChar, const FString _optionsChar)
+void UTwitchChat::SetupCommandCharacters(const FString _commandChar, const FString _optionsChar)
 {
 	CommandCharacter = _commandChar;
 	OptionsCharacter = _optionsChar;
 }
 
-FTwitchIrcMessage UTwitchInteractionComponent::ExtractMessageDetails(const FString& _rawMessage)
+FTwitchIrcMessage UTwitchChat::ExtractMessageDetails(const FString& _rawMessage)
 {
 	FTwitchIrcMessage resultMessage;
 	TArray<FString> _messageSections;

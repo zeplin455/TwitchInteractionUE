@@ -14,18 +14,16 @@
 #include "Runtime/Online/HTTPServer/Public/HttpServerResponse.h"
 #include "Runtime/Online/HTTPServer/Public/HttpRouteHandle.h"
 #include "Runtime/Online/HTTP/Public/Http.h"
-#include "TwitchEventSub.h"
-#include "TwitchInteractionComponent.h"
-#include "CivetHttpServer.h"
-#include "CivetHttpServerHandler.h"
-#include "TwitchAuthenticationComponent.generated.h"
+#include "TwitchPubSub.h"
+#include "TwitchChat.h"
+#include "TwitchAuthentication.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(HttpAuthLog, Log, All);
 
 typedef TFunction<TUniquePtr<FHttpServerResponse>(const FHttpServerRequest& Request)> FHttpResponser;
 
-class UTwitchEventSub;
-class UTwitchInteractionComponent;
+class UTwitchPubSub;
+class UTwitchChat;
 
 USTRUCT(BlueprintType)
 struct FTwitchAuthUserInfoData
@@ -83,13 +81,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FValidateTokenReceived, bool, succes
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class TWITCHINTERACTION_API UTwitchAuthenticationComponent : public UActorComponent
+class TWITCHINTERACTION_API UTwitchAuthentication : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UTwitchAuthenticationComponent();
+	UTwitchAuthentication();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup")
 		int listenPort = 8080;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup")
@@ -102,11 +100,13 @@ public:
 		FString clientId;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup")
 		FString token;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup")
+		TArray<FString> scopes = { "chat:read", "chat:edit", "bits:read", "channel:read:redemptions", "channel:read:subscriptions" };
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup")
-		UTwitchEventSub* EventSubComponent;
+		UTwitchPubSub* EventSubComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup")
-		UTwitchInteractionComponent* TwitchChatComponent;
+		UTwitchChat* TwitchChatComponent;
 
 	UPROPERTY(BlueprintAssignable, Category = "Message Events")
 		FTokenReceived OnTokenReceived;
@@ -118,8 +118,8 @@ public:
 		FValidateTokenReceived OnTokenValidReceived;
 
 	//Global static storage because only on http listener can exist on a port so it must apply to all existing components
-	static TArray<UTwitchInteractionComponent*> GlobalTwitchChatComponents;
-	static TArray<UTwitchEventSub*> GlobalEventSubComponents;
+	static TArray<UTwitchChat*> GlobalTwitchChatComponents;
+	static TArray<UTwitchPubSub*> GlobalEventSubComponents;
 	static FTokenReceived GlobalTokenReceived;
 protected:
 	// Called when the game starts

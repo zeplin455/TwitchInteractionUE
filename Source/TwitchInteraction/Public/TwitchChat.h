@@ -8,7 +8,7 @@
 #include "Components/ActorComponent.h"
 #include "Networking.h"
 #include "Engine/World.h"
-#include "TwitchInteractionComponent.generated.h"
+#include "TwitchChat.generated.h"
 
 
 USTRUCT(BlueprintType)
@@ -61,13 +61,13 @@ DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnCommandReceived, const FString&, command
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMessageReceived, const FTwitchIrcMessage&, message);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class TWITCHINTERACTION_API UTwitchInteractionComponent : public UActorComponent
+class TWITCHINTERACTION_API UTwitchChat : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UTwitchInteractionComponent();
+	UTwitchChat();
 	bool Init;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Message Events")
