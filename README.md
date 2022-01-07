@@ -39,6 +39,8 @@ The Authentication component handles the protocol of getting an authentication t
 
 Twitch requires a user to confirm access to a new application on twitch's website and this confirmation then redirects to a url to deliver the authentication token. To facilitate that process, the twitch authentication component will run a local webserver that twitch can redirect to.
 
+The plugin will open a browser window that connects to twitch to fetch a login token/confirm app access if needed and the browser will be redirected back to point to the internal webserver to deliver the token to the component.
+
 This component has values that can be set directly or through blueprints but they are the following:
 
 ![image](https://user-images.githubusercontent.com/24256332/148523153-342a9533-d6b8-480d-a429-d764d775b893.png)
