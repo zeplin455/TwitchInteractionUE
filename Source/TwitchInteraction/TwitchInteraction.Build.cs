@@ -1,4 +1,4 @@
-// TwitchInteractionUE Copyright (c) 2021 Hannes De Jager. This software is released under the MIT License.
+// Copyright (c) 2021 Zeplin455.
 
 using UnrealBuildTool;
 using System.IO;

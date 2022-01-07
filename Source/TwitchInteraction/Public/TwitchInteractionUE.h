@@ -1,5 +1,6 @@
+// Copyright (c) 2021 Zeplin455.
+
 #pragma once
-//#include "Engine.h"
 #include "Modules/ModuleManager.h"
 
 class FTWITCHINTERACTIONModule : public IModuleInterface

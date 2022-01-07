@@ -1,3 +1,4 @@
+// Copyright (c) 2021 Zeplin455.
 
 #include "TwitchInteractionUE.h"
 #include "Modules/ModuleManager.h"
