@@ -42,7 +42,7 @@ public class TwitchInteraction : ModuleRules
 				"JsonUtilities",
 				"WebSockets",
                 "HTTP",
-                "HttpServer"
+                "HTTPServer"
 
                 // ... add other public dependencies that you statically link with here ...
 			}
