@@ -149,7 +149,7 @@ TUniquePtr<FHttpServerResponse> FBaseHandler::AuthToken(const FHttpServerRequest
 	if (!Request.QueryParams.IsEmpty())
 	{
 		FString token = *Request.QueryParams.Find("access_token");
-		UE_LOG(HttpAuthLog, Log, TEXT("Auth Token %s"), *token);
+		UE_LOG(LogTemp, Log, TEXT("Auth Token %s"), *token);
 
 		if (UTwitchAuthentication::GlobalEventSubComponents.Num() > 0)
 		{
@@ -278,7 +278,7 @@ static UStructType* FWebUtil::GetRequestUStructBody(const FHttpServerRequest& Re
 	UStructType* UStructBody;
 	if (!FJsonObjectConverter::JsonObjectToUStruct(JsonBody, UStructBody))
 	{
-		UE_LOG(UHttpLog, Warning, TEXT("failed to parse json body to ustruct!"))
+		UE_LOG(LogTemp, Warning, TEXT("failed to parse json body to ustruct!"))
 			return nullptr;
 	}
 	return UStructBody;
