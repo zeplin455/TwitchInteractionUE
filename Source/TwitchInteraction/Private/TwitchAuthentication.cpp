@@ -224,7 +224,7 @@ FHttpRouteHandle FWebUtil::BindRoute(const TSharedPtr<IHttpRouter>& HttpRouter, 
 
 FHttpRequestHandler FWebUtil::CreateHandler(const FHttpResponser& HttpResponser)
 {
-	return [HttpResponser](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
+	return FHttpRequestHandler::CreateLambda([HttpResponser](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
 	{
 		auto Response = HttpResponser(Request);
 		if (Response == nullptr)
@@ -233,7 +233,7 @@ FHttpRequestHandler FWebUtil::CreateHandler(const FHttpResponser& HttpResponser)
 		}
 		OnComplete(MoveTemp(Response));
 		return true;
-	};
+	});
 }
 
 TSharedPtr<FJsonObject> FWebUtil::GetRequestJsonBody(const FHttpServerRequest& Request)
